@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { AuthContext } from './context/AuthContext';
 import { logout as apiLogout } from './api/api';
 import 'leaflet/dist/leaflet.css';
@@ -20,6 +20,7 @@ import AdminHeader from './components/AdminHeader';
 // Admin
 import AdminSidebar from './pages/admin/AdminSidebar';
 import AdminDashboardOverview from './pages/admin/AdminDashboardOverview';
+import AdminTripApprovals from './pages/admin/AdminTripApprovals';
 import ManageVehiclesPage from './pages/admin/ManageVehiclesPage';
 import AddVehicle from './pages/admin/AddVehicle';
 import VehicleStatus from './pages/admin/VehicleStatus';
@@ -83,15 +84,15 @@ import FuelStationProfile from './pages/fuelStationOfficer/FuelStationProfile';
 import FuelStationSettings from './pages/fuelStationOfficer/FuelStationSettings';
 
 // Gate Security (legacy components kept for reference)
-import GateSecurityProfile from './pages/gateSecurity/GateSecurityProfile';
+import GateSecurityProfile from './pages/GateSecurity/GateSecurityProfile';
 // New Gate Security Module
-import GateLayout from './pages/gateSecurity/GateLayout';
-import GateSecurityDashboard from './pages/gateSecurity/GateSecurityDashboard';
-import VehicleCheck from './pages/gateSecurity/VehicleCheck';
-import GateLogsPage from './pages/gateSecurity/GateLogsPage';
-import IncidentReportPage from './pages/gateSecurity/IncidentReportPage';
-import GateAlertsPage from './pages/gateSecurity/GateAlertsPage';
-import QRScanner from './pages/gateSecurity/QRScanner';
+import GateLayout from './pages/GateSecurity/GateLayout';
+import GateSecurityDashboard from './pages/GateSecurity/GateSecurityDashboard';
+import VehicleCheck from './pages/GateSecurity/VehicleCheck';
+import GateLogsPage from './pages/GateSecurity/GateLogsPage';
+import IncidentReportPage from './pages/GateSecurity/IncidentReportPage';
+import GateAlertsPage from './pages/GateSecurity/GateAlertsPage';
+import QRScanner from './pages/GateSecurity/QRScanner';
 
 // Maintenance Officer
 import MaintenanceLayout from './pages/maintenance/MaintenanceLayout';
@@ -106,6 +107,7 @@ import MaintenanceProfile from './pages/maintenance/MaintenanceProfile';
 function App() {
   const { user, setUser } = useContext(AuthContext);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   const handleLogin = (userData) => {
     // Use the full user object from localStorage (set by api.js login)
@@ -121,6 +123,7 @@ function App() {
   const handleLogout = () => {
     apiLogout();
     setUser(null);
+    navigate('/');
   };
 
   return (
@@ -156,6 +159,15 @@ function App() {
               <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <AdminDashboardOverview />
+              </div>
+            </div>
+          } />
+          <Route path="/admin/trip-approvals" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
+                <AdminHeader />
+                <AdminTripApprovals />
               </div>
             </div>
           } />
@@ -264,6 +276,15 @@ function App() {
               <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
                 <AdminHeader />
                 <FuelRecordsReport />
+              </div>
+            </div>
+          } />
+          <Route path="/admin/fuel-approvals" element={
+            <div className="app">
+              <AdminSidebar onLogout={handleLogout} collapsed={sidebarCollapsed} onToggleCollapse={() => setSidebarCollapsed(p => !p)} />
+              <div className={`main-content${sidebarCollapsed ? " main-content-collapsed" : ""}`}>
+                <AdminHeader />
+                <FuelApprovals />
               </div>
             </div>
           } />
