@@ -11,13 +11,14 @@ const Vehicle = require('./models/Vehicle');
 const Driver = require('./models/Driver');
 
 const users = [
-  { name: 'Admin User',         username: 'admin',        email: 'admin@haramaya.edu.et',        role: 'ADMIN',        department: 'Administration',      employeeId: 'HU-ADM-001' },
-  { name: 'Transport Officer',  username: 'transport',    email: 'transport@haramaya.edu.et',    role: 'TRANSPORT',    department: 'Transport Operations', employeeId: 'HU-TO-001'  },
-  { name: 'Abebe Kebede',       username: 'driver1',      email: 'driver1@haramaya.edu.et',      role: 'DRIVER',       department: 'Transport',            employeeId: 'HU-DRV-001' },
-  { name: 'Chaltu Gemechu',     username: 'driver2',      email: 'driver2@haramaya.edu.et',      role: 'DRIVER',       department: 'Transport',            employeeId: 'HU-DRV-002' },
-  { name: 'Fuel Officer',       username: 'fuel',         email: 'fuel@haramaya.edu.et',         role: 'FUEL_OFFICER', department: 'Fuel Station',         employeeId: 'HU-FO-001'  },
-  { name: 'Gate Officer',       username: 'gate',         email: 'gate@haramaya.edu.et',         role: 'GATE_OFFICER', department: 'Security',             employeeId: 'HU-GO-001'  },
-  { name: 'Regular User',       username: 'user1',        email: 'user1@haramaya.edu.et',        role: 'USER',         department: 'Research',             employeeId: 'HU-USR-001' },
+  { name: 'Admin User',         username: 'admin',        email: 'admin@haramaya.edu.et',        role: 'ADMIN',               department: 'Administration',      employeeId: 'HU-ADM-001' },
+  { name: 'Transport Officer',  username: 'transport',    email: 'transport@haramaya.edu.et',    role: 'TRANSPORT',           department: 'Transport Operations', employeeId: 'HU-TO-001'  },
+  { name: 'Abebe Kebede',       username: 'driver1',      email: 'driver1@haramaya.edu.et',      role: 'DRIVER',              department: 'Transport',            employeeId: 'HU-DRV-001' },
+  { name: 'Chaltu Gemechu',     username: 'driver2',      email: 'driver2@haramaya.edu.et',      role: 'DRIVER',              department: 'Transport',            employeeId: 'HU-DRV-002' },
+  { name: 'Fuel Officer',       username: 'fuel',         email: 'fuel@haramaya.edu.et',         role: 'FUEL_OFFICER',        department: 'Fuel Station',         employeeId: 'HU-FO-001'  },
+  { name: 'Gate Officer',       username: 'gate',         email: 'gate@haramaya.edu.et',         role: 'GATE_OFFICER',        department: 'Security',             employeeId: 'HU-GO-001'  },
+  { name: 'Regular User',       username: 'user1',        email: 'user1@haramaya.edu.et',        role: 'USER',                department: 'Research',             employeeId: 'HU-USR-001' },
+  { name: 'Maintenance Officer',username: 'maintenance',  email: 'maintenance@haramaya.edu.et',  role: 'MAINTENANCE_OFFICER', department: 'Maintenance',          employeeId: 'HU-MO-001'  },
 ];
 
 const vehicles = [

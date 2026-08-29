@@ -5,12 +5,24 @@ const MaintenanceSchedule = require('../models/MaintenanceSchedule');
 const Inventory = require('../models/Inventory');
 const Vehicle = require('../models/Vehicle');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
+
+const notify = (docs) => Notification.insertMany(docs).catch(console.error);
+const hasRole = (req, ...roles) => roles.includes(req.user?.role);
+const requireRole = (req, res, ...roles) => {
+  if (!hasRole(req, ...roles)) {
+    res.status(403).json({ message: 'Access denied' });
+    return false;
+  }
+  return true;
+};
 
 // ─── ISSUES ──────────────────────────────────────────────
 
 // POST /api/maintenance/report — driver submits issue
 router.post('/report', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'DRIVER')) return;
     const { vehiclePlate, issue, priority, images } = req.body;
     if (!vehiclePlate || !issue) return res.status(400).json({ message: 'Vehicle plate and issue are required' });
 
@@ -28,6 +40,11 @@ router.post('/report', authMiddleware, async (req, res) => {
     });
 
     await newIssue.save();
+    // Notify Maintenance Officer immediately
+    await notify([
+      { recipientRole: 'MAINTENANCE_OFFICER', title: 'New Vehicle Issue Reported', message: `${newIssue.reporterName} reported: "${issue}" on vehicle ${vehiclePlate.toUpperCase()} [Priority: ${priority || 'Medium'}]`, type: 'maintenance', refId: newIssue._id.toString() },
+      { recipientRole: 'TRANSPORT', title: 'Vehicle Issue Reported', message: `Vehicle ${vehiclePlate.toUpperCase()} has a reported issue: "${issue}"`, type: 'maintenance', refId: newIssue._id.toString() },
+    ]);
     res.status(201).json(newIssue);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -58,16 +75,22 @@ router.get('/issues', authMiddleware, async (req, res) => {
 // PUT /api/maintenance/approve/:id — approve issue, set vehicle to Under Maintenance
 router.put('/approve/:id', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'MAINTENANCE_OFFICER')) return;
     const { estimatedCost, notes } = req.body;
     const issue = await MaintenanceIssue.findById(req.params.id);
     if (!issue) return res.status(404).json({ message: 'Issue not found' });
 
     issue.status = 'approved';
+    issue.vehicleStatusAfter = 'under maintenance';
     issue.approvedBy = req.user.name || 'Maintenance Officer';
     issue.approvedAt = new Date();
     if (estimatedCost) issue.estimatedCost = estimatedCost;
     if (notes) issue.notes = notes;
     await issue.save();
+    // Notify driver that repair has been approved and vehicle is under maintenance
+    await notify([
+      { recipientId: issue.reportedBy, title: 'Vehicle Under Maintenance', message: `Your reported issue on ${issue.vehiclePlate} has been approved for repair. Estimated cost: ${estimatedCost || 'TBD'} ETB. ${notes ? 'Note: ' + notes : ''}`, type: 'maintenance', refId: issue._id.toString() },
+    ]);
 
     // Set vehicle status to Under Maintenance
     if (issue.vehicleId) {
@@ -88,6 +111,7 @@ router.put('/approve/:id', authMiddleware, async (req, res) => {
 // PUT /api/maintenance/reject/:id
 router.put('/reject/:id', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'MAINTENANCE_OFFICER')) return;
     const { rejectionReason } = req.body;
     const issue = await MaintenanceIssue.findByIdAndUpdate(
       req.params.id,
@@ -104,7 +128,8 @@ router.put('/reject/:id', authMiddleware, async (req, res) => {
 // PUT /api/maintenance/status/:id — update repair status
 router.put('/status/:id', authMiddleware, async (req, res) => {
   try {
-    const { status, actualCost, partsUsed, notes } = req.body;
+    if (!requireRole(req, res, 'MAINTENANCE_OFFICER')) return;
+    const { status, actualCost, partsUsed, notes, expectedWaitHours, repairActions } = req.body;
     const issue = await MaintenanceIssue.findById(req.params.id);
     if (!issue) return res.status(404).json({ message: 'Issue not found' });
 
@@ -113,11 +138,28 @@ router.put('/status/:id', authMiddleware, async (req, res) => {
     if (notes) issue.notes = notes;
 
     if (status === 'in-progress') {
-      // No vehicle change needed
+      issue.vehicleStatusAfter = 'under maintenance';
+      if (expectedWaitHours) {
+        issue.expectedWaitHours = Number(expectedWaitHours);
+        issue.expectedCompletionAt = new Date(Date.now() + Number(expectedWaitHours) * 60 * 60 * 1000);
+      }
+      // Notify driver of repair timeline
+      await notify([
+        {
+          recipientId: issue.reportedBy,
+          title: 'Repair In Progress',
+          message: `Your vehicle ${issue.vehiclePlate} is now under maintenance.${issue.expectedWaitHours ? ` Estimated waiting time: ${issue.expectedWaitHours} hour(s).` : ''} ${notes ? 'Update: ' + notes : 'Please wait for completion notice.'}`,
+          type: 'maintenance',
+          refId: issue._id.toString(),
+        },
+      ]);
     }
 
     if (status === 'completed') {
       issue.completedAt = new Date();
+      issue.errorFaced = issue.issue;
+      issue.repairActions = repairActions || notes || 'Repair completed';
+      issue.vehicleStatusAfter = 'active';
 
       // Deduct parts from inventory
       if (partsUsed?.length) {
@@ -139,6 +181,12 @@ router.put('/status/:id', authMiddleware, async (req, res) => {
           { status: 'available' }
         );
       }
+      // Notify driver and transport that vehicle is back
+      await notify([
+        { recipientId: issue.reportedBy, title: 'Vehicle Repaired', message: `Your vehicle ${issue.vehiclePlate} has been repaired and is now active. Error faced: "${issue.errorFaced}". Repair actions: "${issue.repairActions}". Completed at: ${issue.completedAt.toLocaleString()}.`, type: 'maintenance', refId: issue._id.toString() },
+        { recipientRole: 'TRANSPORT', title: 'Vehicle Back in Service', message: `Vehicle ${issue.vehiclePlate} has been repaired and is now available for trips.`, type: 'maintenance', refId: issue._id.toString() },
+        { recipientRole: 'ADMIN', title: 'Maintenance Completed', message: `Vehicle ${issue.vehiclePlate} repair completed. Cost: ${actualCost || 0} ETB.`, type: 'maintenance', refId: issue._id.toString() },
+      ]);
     }
 
     await issue.save();
@@ -318,24 +366,32 @@ router.post('/send-to-admin', authMiddleware, async (req, res) => {
     const { reportType, summary, data } = req.body;
     const SentReport = require('../models/SentReport');
 
-    // Find all admin users
-    const admins = await User.find({ role: 'ADMIN', isActive: true }).select('username');
-    if (!admins.length) return res.status(404).json({ message: 'No admin users found' });
+    // Find all admin AND transport users
+    const recipients = await User.find({ role: { $in: ['ADMIN', 'TRANSPORT'] }, isActive: true }).select('username role');
+    if (!recipients.length) return res.status(404).json({ message: 'No admin/transport users found' });
 
     const columns = data?.length ? Object.keys(data[0]) : [];
 
-    await Promise.all(admins.map(admin =>
+    await Promise.all(recipients.map(r =>
       new SentReport({
         reportType: 'maintenance',
         reportName: reportType || 'Maintenance Report',
-        sentTo: admin.username,
+        sentTo: r.username,
         sentBy: req.user.name || 'Maintenance Officer',
         data: data || [],
         columns,
       }).save()
     ));
 
-    res.json({ message: `Report sent to ${admins.length} admin(s)` });
+    // Also create in-app notifications
+    await notify(recipients.map(r => ({
+      recipientRole: r.role,
+      title: 'Maintenance Report Received',
+      message: `A maintenance report "${reportType || 'Maintenance Report'}" was sent by ${req.user.name || 'Maintenance Officer'}`,
+      type: 'maintenance',
+    })));
+
+    res.json({ message: `Report sent to ${recipients.length} recipient(s)` });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

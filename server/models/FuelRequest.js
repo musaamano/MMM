@@ -15,14 +15,16 @@ const fuelRequestSchema = new mongoose.Schema(
     odometer:         { type: Number, default: 0 },
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'dispensed', 'confirmed'],
+      enum: ['pending', 'approved', 'cancelled', 'dispensed', 'confirmed'],
       default: 'pending',
     },
     // Transport officer fills these on approval
     permittedLiters:  Number,
     approvedBy:       String,
     approvedAt:       Date,
+    approvalKey:      String,
     rejectionReason:  String,
+    cancelledAt:      Date,
     // Fuel station fills this on dispense
     dispensedLiters:  Number,
     dispensedBy:      String,

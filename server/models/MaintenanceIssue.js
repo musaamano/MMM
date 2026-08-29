@@ -23,8 +23,13 @@ const maintenanceIssueSchema = new mongoose.Schema({
   approvedBy:   String,
   approvedAt:   Date,
   completedAt:  Date,
+  expectedWaitHours: Number,
+  expectedCompletionAt: Date,
   estimatedCost: Number,
   actualCost:   Number,
+  errorFaced:   String,
+  repairActions: String,
+  vehicleStatusAfter: { type: String, enum: ['active', 'under maintenance'] },
   partsUsed:    [{ partName: String, quantity: Number, cost: Number }],
   notes:        String,
   images:       [String], // base64 images

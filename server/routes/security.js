@@ -5,10 +5,20 @@ const Vehicle = require('../models/Vehicle');
 const GateLog = require('../models/GateLog');
 const IncidentReport = require('../models/IncidentReport');
 const User = require('../models/User');
+const tripDateOnly = (dateValue = '') => String(dateValue).slice(0, 10);
+const hasRole = (req, ...roles) => roles.includes(req.user?.role);
+const requireRole = (req, res, ...roles) => {
+  if (!hasRole(req, ...roles)) {
+    res.status(403).json({ message: 'Access denied' });
+    return false;
+  }
+  return true;
+};
 
 // GET /api/security/verify/:plateNumber
 router.get('/verify/:plateNumber', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN', 'TRANSPORT')) return;
     const plate = req.params.plateNumber.toUpperCase().trim();
 
     // Find vehicle in DB
@@ -18,14 +28,14 @@ router.get('/verify/:plateNumber', authMiddleware, async (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const trip = await Request.findOne({
       assignedVehicle: { $regex: new RegExp(plate, 'i') },
-      date: today,
+      date: { $regex: new RegExp(`^${today}`) },
     }).sort({ updatedAt: -1 });
 
     // Also check if there's any future scheduled trip
     const scheduledTrip = await Request.findOne({
       assignedVehicle: { $regex: new RegExp(plate, 'i') },
       date: { $gte: today },
-      status: { $in: ['pending', 'approved'] },
+      status: { $in: ['pending', 'assigned', 'approved'] },
     }).sort({ date: 1 });
 
     // Find all trips for this vehicle (history)
@@ -155,6 +165,7 @@ router.get('/verify/:plateNumber', authMiddleware, async (req, res) => {
 // POST /api/security/checkin
 router.post('/checkin', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN')) return;
     const { plateNumber, driverName, vehicleModel, tripId, remarks } = req.body;
     const officer = req.user.name || 'Gate Officer';
 
@@ -179,6 +190,7 @@ router.post('/checkin', authMiddleware, async (req, res) => {
 // POST /api/security/checkout
 router.post('/checkout', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN')) return;
     const { plateNumber, remarks } = req.body;
     const plate = plateNumber.toUpperCase();
 
@@ -214,6 +226,7 @@ router.post('/checkout', authMiddleware, async (req, res) => {
 // GET /api/security/logs
 router.get('/logs', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN', 'TRANSPORT')) return;
     const { date, status, limit = 50 } = req.query;
     const filter = {};
     if (status) filter.status = status;
@@ -232,6 +245,7 @@ router.get('/logs', authMiddleware, async (req, res) => {
 // POST /api/security/report — incident report
 router.post('/report', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN')) return;
     const { plateNumber, description, incidentType, severity, image } = req.body;
     const report = new IncidentReport({
       plateNumber,
@@ -251,6 +265,7 @@ router.post('/report', authMiddleware, async (req, res) => {
 // GET /api/security/reports
 router.get('/reports', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN')) return;
     const reports = await IncidentReport.find().sort({ createdAt: -1 }).limit(50);
     res.json(reports);
   } catch (err) {
@@ -261,6 +276,7 @@ router.get('/reports', authMiddleware, async (req, res) => {
 // GET /api/security/verify-trip/:token — verify by QR token
 router.get('/verify-trip/:token', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN')) return;
     const trip = await Request.findOne({ qrToken: req.params.token });
 
     if (!trip) {
@@ -271,12 +287,16 @@ router.get('/verify-trip/:token', authMiddleware, async (req, res) => {
       return res.json({ status: 'denied', message: 'Trip was rejected by Transport Officer' });
     }
 
-    if (trip.status === 'pending') {
-      return res.json({ status: 'denied', message: 'Trip not yet approved by Transport Officer' });
+    if (trip.status === 'pending' || trip.status === 'assigned') {
+      return res.json({ status: 'denied', message: 'Trip not yet approved by Admin' });
     }
 
     if (trip.status === 'completed') {
       return res.json({ status: 'denied', message: 'QR already used — trip completed' });
+    }
+
+    if (!['approved', 'in-progress'].includes(trip.status)) {
+      return res.json({ status: 'denied', message: `Trip is not authorized for exit (status: ${trip.status})` });
     }
 
     if (trip.qrUsed) {
@@ -285,29 +305,34 @@ router.get('/verify-trip/:token', authMiddleware, async (req, res) => {
 
     // Check if trip date is today or future
     const today = new Date().toISOString().slice(0, 10);
-    if (trip.date < today) {
+    const tripDate = tripDateOnly(trip.date);
+    if (tripDate < today) {
       return res.json({ status: 'denied', message: `Trip expired — was scheduled for ${trip.date}` });
     }
 
     // Check if late (trip date is today but past reasonable time)
-    const isLate = trip.date === today && new Date().getHours() > 20;
+    const isLate = tripDate === today && new Date().getHours() > 20;
 
     // Mark QR as used
     trip.qrUsed = true;
     trip.qrUsedAt = new Date();
+    if (trip.status !== 'in-progress') {
+      trip.status = 'in-progress';
+      trip.startedAt = new Date();
+    }
     await trip.save();
 
-    // Auto create gate log
+    // Auto create gate log for trip exit
     const GateLog = require('../models/GateLog');
     await new GateLog({
       plateNumber: trip.assignedVehicle?.match(/\(([^)]+)\)/)?.[1] || trip.assignedVehicle || 'QR-SCAN',
       driverName: trip.assignedDriver,
-      direction: 'entry',
+      direction: 'exit',
       status: 'approved',
       tripId: trip._id,
       officer: req.user.name || 'Gate Officer',
-      remarks: `QR scan verified${isLate ? ' — LATE' : ''}`,
-      entryTime: new Date(),
+      remarks: `QR scan verified (Trip Start/Exit)${isLate ? ' — LATE' : ''}`,
+      exitTime: new Date(),
     }).save();
 
     return res.json({
@@ -335,6 +360,7 @@ router.get('/verify-trip/:token', authMiddleware, async (req, res) => {
 // GET /api/security/stats
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
+    if (!requireRole(req, res, 'GATE_OFFICER', 'ADMIN', 'TRANSPORT')) return;
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
 

@@ -19,7 +19,7 @@ const requestSchema = new mongoose.Schema(
     specialRequirements: String,
     status: {
       type: String,
-      enum: ['pending', 'approved', 'rejected', 'in-progress', 'completed'],
+      enum: ['pending', 'assigned', 'approved', 'rejected', 'in-progress', 'completed'],
       default: 'pending',
     },
     assignedVehicle: String,
