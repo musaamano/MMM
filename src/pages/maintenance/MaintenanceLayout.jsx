@@ -1,10 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, Wrench, Calendar, Package, BarChart2, Bell, Settings, User, X, CheckCheck } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Wrench, Calendar, Package, BarChart2, Settings, User, X } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationDropdown from '../../components/NotificationDropdown';
+import NotificationAlerts from '../../components/NotificationAlerts';
 import './MaintenanceLayout.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 export default function MaintenanceLayout({ onLogout }) {
@@ -12,14 +15,10 @@ export default function MaintenanceLayout({ onLogout }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotif, setShowNotif]   = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [readIds, setReadIds]       = useState(() => {
-    try { return JSON.parse(localStorage.getItem('maint_notif_read') || '[]'); } catch { return []; }
-  });
   const [stats, setStats]           = useState({ pending: 0, lowStock: 0 });
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const settingsRef = useRef(null);
-  const notifRef    = useRef(null);
   const navigate    = useNavigate();
   const location    = useLocation();
   const currentUser = getCurrentUser();
@@ -35,6 +34,16 @@ export default function MaintenanceLayout({ onLogout }) {
       .catch(console.error);
     fetchStats();
   }, [location.pathname]);
+
+  // Live-update avatar after maintenance profile photo upload
+  useEffect(() => {
+    const handlePhotoUpdated = (e) => {
+      const nextPhoto = e?.detail?.profilePhoto;
+      if (nextPhoto) setProfilePhoto(nextPhoto);
+    };
+    window.addEventListener('maintenanceProfilePhotoUpdated', handlePhotoUpdated);
+    return () => window.removeEventListener('maintenanceProfilePhotoUpdated', handlePhotoUpdated);
+  }, []);
 
   const fetchStats = () => {
     const t = token(); if (!t) return;
@@ -112,9 +121,8 @@ export default function MaintenanceLayout({ onLogout }) {
         });
       }
 
-      // Sort newest first
+      // Sort newest first (reserved for future custom maintenance feed UI)
       notifs.sort((a, b) => new Date(b.time) - new Date(a.time));
-      setNotifications(notifs);
     }).catch(console.error);
   };
 
@@ -128,26 +136,10 @@ export default function MaintenanceLayout({ onLogout }) {
   useEffect(() => {
     const handler = (e) => {
       if (settingsRef.current && !settingsRef.current.contains(e.target)) setShowSettings(false);
-      if (notifRef.current && !notifRef.current.contains(e.target)) setShowNotif(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  const enriched    = notifications.map(n => ({ ...n, read: readIds.includes(n.id) }));
-  const unreadCount = enriched.filter(n => !n.read).length;
-
-  const markRead = (id) => {
-    const updated = [...readIds, id];
-    setReadIds(updated);
-    localStorage.setItem('maint_notif_read', JSON.stringify(updated));
-  };
-
-  const markAllRead = () => {
-    const ids = notifications.map(n => n.id);
-    setReadIds(ids);
-    localStorage.setItem('maint_notif_read', JSON.stringify(ids));
-  };
 
   const handleLogout = () => { if (onLogout) onLogout(); navigate('/login'); };
 
@@ -164,6 +156,7 @@ export default function MaintenanceLayout({ onLogout }) {
 
   return (
     <div className="maint-wrapper">
+      <NotificationAlerts notifications={notifications} />
       <button className="maint-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
         <span className={`maint-hamburger ${mobileOpen ? 'open' : ''}`}><span /><span /><span /></span>
       </button>
@@ -198,51 +191,14 @@ export default function MaintenanceLayout({ onLogout }) {
         <header className="maint-header">
           <div className="maint-header-left"><h1>Maintenance</h1></div>
           <div className="maint-header-right">
-            <div className="maint-header-dropdown" ref={notifRef}>
-              <button className="maint-header-btn" onClick={() => setShowNotif(p => !p)}>
-                <Bell size={20} />
-                {unreadCount > 0 && <span className="maint-notif-badge">{unreadCount}</span>}
-              </button>
-              {showNotif && (
-                <div className="maint-notif-panel">
-                  <div className="maint-notif-header">
-                    <span>Notifications</span>
-                    <div style={{ display:'flex', gap:6 }}>
-                      {unreadCount > 0 && (
-                        <button className="maint-notif-action" onClick={markAllRead} title="Mark all read">
-                          <CheckCheck size={15} />
-                        </button>
-                      )}
-                      <button className="maint-notif-action" onClick={() => setShowNotif(false)}>
-                        <X size={15} />
-                      </button>
-                    </div>
-                  </div>
-                  <div className="maint-notif-list">
-                    {enriched.length === 0 ? (
-                      <div className="maint-notif-empty">
-                        <Bell size={32} color="#d1d5db" />
-                        <p>No notifications</p>
-                      </div>
-                    ) : enriched.map(n => (
-                      <div
-                        key={n.id}
-                        className={`maint-notif-item ${n.read ? 'read' : 'unread'}`}
-                        onClick={() => { markRead(n.id); setShowNotif(false); navigate(n.link); }}
-                      >
-                        <span className="maint-notif-icon">{n.icon}</span>
-                        <div className="maint-notif-body">
-                          <div className="maint-notif-title" style={{ color: n.color }}>{n.title}</div>
-                          <div className="maint-notif-msg">{n.message}</div>
-                          <div className="maint-notif-time">{new Date(n.time).toLocaleString()}</div>
-                        </div>
-                        {!n.read && <span className="maint-notif-dot" style={{ background: n.color }} />}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <NotificationDropdown
+              notifications={notifications}
+              unreadCount={unreadCount}
+              onMarkRead={markRead}
+              onMarkAllRead={markAllRead}
+              open={showNotif}
+              onToggle={setShowNotif}
+            />
 
             <div className="maint-header-dropdown" ref={settingsRef}>
               <button className="maint-header-btn" onClick={() => setShowSettings(p => !p)}>

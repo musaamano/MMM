@@ -8,7 +8,7 @@ const Settings = () => {
   const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
   const currentUser = getCurrentUser();
-  const [profileImage, setProfileImage] = useState(currentUser?.profilePicture || 'https://via.placeholder.com/120');
+  const [profileImage, setProfileImage] = useState(currentUser?.profilePhoto || currentUser?.profilePicture || 'https://via.placeholder.com/120');
   const [saving, setSaving] = useState(false);
   const [toast, setToast]   = useState('');
 
@@ -25,14 +25,19 @@ const Settings = () => {
   };
 
   const handleSave = async () => {
-    if (!currentUser?._id) return;
+    const userId = currentUser?._id || currentUser?.id;
+    if (!userId) return;
     setSaving(true);
     try {
-      await updateUser(currentUser._id, {
-        name: `${form.firstName} ${form.lastName}`.trim(),
+      const newName = `${form.firstName} ${form.lastName}`.trim();
+      await updateUser(userId, {
+        name: newName,
         email: form.email,
         phone: form.phone,
       });
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...stored, name: newName, email: form.email, phone: form.phone }));
+      window.dispatchEvent(new CustomEvent('adminProfilePhotoUpdated', { detail: { name: newName } }));
       showToast('Changes saved successfully');
     } catch (err) {
       showToast('Failed to save: ' + err.message);
@@ -62,21 +67,45 @@ const Settings = () => {
         return;
       }
 
-      // Create a preview URL
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-        // Here you would typically upload to your backend
-        // uploadToBackend(file);
+      reader.onloadend = async () => {
+        const photoData = reader.result;
+        setSaving(true);
+        try {
+          const userId = currentUser?._id || currentUser?.id;
+          if (!userId) throw new Error('User not found');
+          await updateUser(userId, { profilePhoto: photoData });
+          setProfileImage(photoData);
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: photoData }));
+          window.dispatchEvent(new CustomEvent('adminProfilePhotoUpdated', { detail: { profilePhoto: photoData } }));
+          showToast('Profile photo updated successfully');
+        } catch (err) {
+          showToast('Failed to upload photo: ' + err.message);
+        } finally {
+          setSaving(false);
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemovePhoto = () => {
-    setProfileImage('https://via.placeholder.com/120');
-    // Here you would typically call your backend to remove the photo
-    // removePhotoFromBackend();
+  const handleRemovePhoto = async () => {
+    setSaving(true);
+    try {
+      const userId = currentUser?._id || currentUser?.id;
+      if (!userId) throw new Error('User not found');
+      await updateUser(userId, { profilePhoto: '' });
+      setProfileImage('https://via.placeholder.com/120');
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: '' }));
+      window.dispatchEvent(new CustomEvent('adminProfilePhotoUpdated', { detail: { profilePhoto: '' } }));
+      showToast('Profile photo removed');
+    } catch (err) {
+      showToast('Failed to remove photo: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const triggerFileInput = () => {

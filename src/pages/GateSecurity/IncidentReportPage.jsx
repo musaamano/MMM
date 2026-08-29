@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Camera, CameraOff, RefreshCw } from 'lucide-react';
 import './IncidentReportPage.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const ALPR  = 'http://localhost:5001';
 const token = () => localStorage.getItem('token');
 

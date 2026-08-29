@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { getCurrentUser } from '../../api/api';
 import './DriverProfile.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 export default function DriverProfile() {
@@ -43,6 +43,13 @@ export default function DriverProfile() {
         const res = await fetch(`${BASE}/users/profile`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token()}`},body:JSON.stringify({profilePhoto:base64})});
         const d = await res.json(); if(!res.ok) throw new Error(d.message);
         setData(p=>({...p,profilePhoto:base64}));
+        // Keep shared user cache in sync so layout/header can reflect latest photo
+        try {
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: base64 }));
+        } catch {}
+        // Notify layout components to refresh avatar immediately
+        window.dispatchEvent(new CustomEvent('profilePhotoUpdated', { detail: { profilePhoto: base64 } }));
         showToast('Photo updated!');
       } catch(err){ showToast(err.message||'Failed','error'); }
       finally { setUploading(false); }

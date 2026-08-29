@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:5000/api';
+﻿const BASE_URL = `http://${window.location.hostname}:5000/api`;
 
 // Get token from localStorage
 const getToken = () => localStorage.getItem('token');
@@ -60,6 +60,17 @@ export const updateRequest = async (id, updates) => {
     method: 'PATCH',
     headers: headers(),
     body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message);
+  return data;
+};
+
+export const assignRequest = async (id, payload) => {
+  const res = await fetch(`${BASE_URL}/requests/${id}/assign`, {
+    method: 'PUT',
+    headers: headers(),
+    body: JSON.stringify(payload),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);
@@ -462,11 +473,11 @@ export const rejectFuelRequest = async (id, rejectionReason) => {
   return data;
 };
 
-export const dispenseFuel = async (id, dispensedLiters, dispensedBy) => {
+export const dispenseFuel = async (id, dispensedLiters, dispensedBy, approvalKey) => {
   const res = await fetch(`${BASE_URL}/fuel-requests/${id}/dispense`, {
     method: 'PUT',
     headers: headers(),
-    body: JSON.stringify({ dispensedLiters, dispensedBy }),
+    body: JSON.stringify({ dispensedLiters, dispensedBy, approvalKey }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message);

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import './DriverInspection.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 const INIT = {

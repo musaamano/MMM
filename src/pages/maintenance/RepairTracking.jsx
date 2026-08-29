@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import './maintenance.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 const STATUS_FLOW = { approved:'in-progress', 'in-progress':'completed' };
@@ -12,7 +12,7 @@ export default function RepairTracking() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast]   = useState(null);
   const [selected, setSelected] = useState(null);
-  const [completeData, setCompleteData] = useState({ actualCost:'', notes:'', partsUsed:[] });
+  const [completeData, setCompleteData] = useState({ actualCost:'', notes:'', repairActions:'', expectedWaitHours:'', partsUsed:[] });
   const [newPart, setNewPart] = useState({ partName:'', quantity:1, cost:0 });
 
   useEffect(() => { fetchIssues(); }, []);
@@ -31,7 +31,12 @@ export default function RepairTracking() {
     if (newStatus === 'completed') {
       body.actualCost = completeData.actualCost;
       body.notes = completeData.notes;
+      body.repairActions = completeData.repairActions;
       body.partsUsed = completeData.partsUsed;
+    }
+    if (newStatus === 'in-progress') {
+      body.expectedWaitHours = completeData.expectedWaitHours;
+      body.notes = completeData.notes;
     }
     try {
       const res = await fetch(`${BASE}/maintenance/status/${id}`, {
@@ -74,7 +79,7 @@ export default function RepairTracking() {
                     <td style={{display:'flex',gap:6}}>
                       {STATUS_FLOW[issue.status] && (
                         <button className="maint-btn primary" style={{padding:'4px 10px',fontSize:12}}
-                          onClick={() => { setSelected(issue._id === selected ? null : issue._id); setCompleteData({actualCost:'',notes:'',partsUsed:[]}); }}>
+                          onClick={() => { setSelected(issue._id === selected ? null : issue._id); setCompleteData({actualCost:'',notes:'',repairActions:'',expectedWaitHours:'',partsUsed:[]}); }}>
                           {STATUS_LABEL[issue.status]}
                         </button>
                       )}
@@ -94,6 +99,10 @@ export default function RepairTracking() {
                               <label>Notes</label>
                               <input type="text" value={completeData.notes} onChange={e=>setCompleteData(p=>({...p,notes:e.target.value}))} />
                             </div>
+                          </div>
+                          <div className="maint-form-group">
+                            <label>Repair Actions Taken</label>
+                            <input type="text" value={completeData.repairActions} onChange={e=>setCompleteData(p=>({...p,repairActions:e.target.value}))} placeholder="Describe repair actions performed" />
                           </div>
                           <h4>Parts Used</h4>
                           <div className="maint-form-row" style={{alignItems:'flex-end'}}>
@@ -128,6 +137,16 @@ export default function RepairTracking() {
                     <tr key={`start-${issue._id}`}>
                       <td colSpan={7}>
                         <div className="issue-detail-panel">
+                          <div className="maint-form-row">
+                            <div className="maint-form-group">
+                              <label>Expected Waiting Time (hours)</label>
+                              <input type="number" min="1" value={completeData.expectedWaitHours} onChange={e=>setCompleteData(p=>({...p,expectedWaitHours:e.target.value}))} />
+                            </div>
+                            <div className="maint-form-group">
+                              <label>Timeline Note</label>
+                              <input type="text" value={completeData.notes} onChange={e=>setCompleteData(p=>({...p,notes:e.target.value}))} placeholder="e.g. Parts arriving this afternoon" />
+                            </div>
+                          </div>
                           <button className="maint-btn primary" onClick={() => updateStatus(issue._id, 'in-progress')}>🔧 Start Repair</button>
                           <button className="maint-btn secondary" style={{marginLeft:10}} onClick={() => setSelected(null)}>Cancel</button>
                         </div>

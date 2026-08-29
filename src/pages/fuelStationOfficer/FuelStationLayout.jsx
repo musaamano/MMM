@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, ClipboardList, Droplets, Package,
@@ -6,9 +6,11 @@ import {
   ChevronLeft, ChevronRight, Fuel
 } from 'lucide-react';
 import { getCurrentUser, getFuelRequests, getFuelInventory } from '../../api/api';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationAlerts from '../../components/NotificationAlerts';
 import './FuelStationLayout.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 export default function FuelStationLayout({ onLogout }) {
@@ -22,6 +24,7 @@ export default function FuelStationLayout({ onLogout }) {
   });
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const { notifications: apiNotifications } = useNotifications();
   const notifRef    = useRef(null);
   const settingsRef = useRef(null);
   const navigate    = useNavigate();
@@ -40,6 +43,16 @@ export default function FuelStationLayout({ onLogout }) {
       .catch(console.error);
     fetchNotifications();
   }, [location.pathname]);
+
+  // Live-update fuel station avatar after profile photo upload
+  useEffect(() => {
+    const handleFuelPhotoUpdated = (e) => {
+      const nextPhoto = e?.detail?.profilePhoto;
+      if (nextPhoto) setProfilePhoto(nextPhoto);
+    };
+    window.addEventListener('fuelProfilePhotoUpdated', handleFuelPhotoUpdated);
+    return () => window.removeEventListener('fuelProfilePhotoUpdated', handleFuelPhotoUpdated);
+  }, []);
 
   const fetchNotifications = async () => {
     try {
@@ -131,6 +144,7 @@ export default function FuelStationLayout({ onLogout }) {
 
   return (
     <div className="fuel-layout-wrapper">
+      <NotificationAlerts notifications={apiNotifications} />
       {/* Mobile toggle */}
       <button className="fuel-mobile-toggle" onClick={() => setMobileOpen(!mobileOpen)}>
         <span className={`fuel-hamburger ${mobileOpen ? 'open' : ''}`}><span /><span /><span /></span>

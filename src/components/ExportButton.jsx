@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { FileDown, Send } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -132,7 +132,7 @@ const ExportButton = ({ data, filename, reportTitle }) => {
     try {
       // Fetch transport officers from backend
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/users', {
+      const res = await fetch(`http://${window.location.hostname}:5000/api/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const users = await res.json();

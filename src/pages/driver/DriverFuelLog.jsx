@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import './DriverFuelLog.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 const INIT = { vehicle: '', fuelAmount: '', cost: '', odometer: '', date: new Date().toISOString().slice(0, 10), notes: '', receiptImage: null };

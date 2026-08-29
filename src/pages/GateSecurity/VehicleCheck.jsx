@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+﻿import { useState, useRef, useEffect, useCallback } from 'react';
 import { ShieldCheck, ShieldX, Search, LogIn, LogOut, Camera, CameraOff, Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import './VehicleCheck.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const ALPR  = 'http://localhost:5001';
 const token = () => localStorage.getItem('token');
 

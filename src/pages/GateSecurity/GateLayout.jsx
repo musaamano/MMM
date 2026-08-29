@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShieldCheck, List, AlertTriangle, FileWarning, Bell, Settings, User, X, QrCode } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
 import './GateLayout.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 export default function GateLayout({ onLogout }) {
@@ -30,6 +30,24 @@ export default function GateLayout({ onLogout }) {
       .then(r => r.json()).then(u => { if (u.profilePhoto) setProfilePhoto(u.profilePhoto); })
       .catch(console.error);
   }, [location.pathname]);
+
+  // Live-update gate avatar after profile photo upload
+  useEffect(() => {
+    const saved = localStorage.getItem('gateSecurityProfilePhoto');
+    if (saved) setProfilePhoto(saved);
+
+    const handlePhotoUpdated = (e) => {
+      const nextPhoto = e?.detail?.profilePhoto;
+      if (nextPhoto) setProfilePhoto(nextPhoto);
+    };
+
+    window.addEventListener('gateProfilePhotoUpdated', handlePhotoUpdated);
+    window.addEventListener('profilePhotoUpdated', handlePhotoUpdated);
+    return () => {
+      window.removeEventListener('gateProfilePhotoUpdated', handlePhotoUpdated);
+      window.removeEventListener('profilePhotoUpdated', handlePhotoUpdated);
+    };
+  }, []);
 
   useEffect(() => {
     const t = token(); if (!t) return;

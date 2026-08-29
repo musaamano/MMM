@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import './maintenance.css';
 import './MaintenanceProfile.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 export default function MaintenanceProfile() {
@@ -45,6 +45,13 @@ export default function MaintenanceProfile() {
         const res = await fetch(`${BASE}/users/profile`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token()}`},body:JSON.stringify({profilePhoto:b64})});
         const d = await res.json(); if(!res.ok) throw new Error(d.message);
         setData(p=>({...p,profilePhoto:b64}));
+        // Keep cached user in sync so header/avatar can reflect latest photo
+        try {
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: b64 }));
+        } catch {}
+        // Notify layout components for instant avatar refresh
+        window.dispatchEvent(new CustomEvent('maintenanceProfilePhotoUpdated', { detail: { profilePhoto: b64 } }));
         showToast('Photo updated!');
       } catch(err){ showToast(err.message||'Failed','error'); }
       finally { setUploading(false); }

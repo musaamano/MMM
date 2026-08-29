@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { Lock, Eye, EyeOff, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
 import busLogo from "../../assets/bus.png";
@@ -42,7 +42,7 @@ export default function ResetPassword() {
     // Verify token validity
     const verifyToken = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/auth/verify-reset-token/${token}`);
+        const response = await fetch(`http://${window.location.hostname}:5000/api/auth/verify-reset-token/${token}`);
         if (!response.ok) {
           setTokenValid(false);
           setError("Invalid or expired reset link");
@@ -74,7 +74,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/reset-password", {
+      const response = await fetch(`http://${window.location.hostname}:5000/api/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, password: formData.password }),

@@ -87,6 +87,29 @@ const AdminSidebar = ({ onLogout, collapsed, onToggleCollapse }) => {
 
         <div className="nav-dropdown">
           <div 
+            className={`nav-item dropdown-toggle ${openDropdown === 'trips' ? 'open' : ''}`}
+            onClick={() => !collapsed && toggleDropdown('trips')}
+            title="Trips"
+          >
+            <Icon d={ICONS.reports} />
+            {!collapsed && <><span>Trips & Approvals</span>
+            <span className="dropdown-arrow">{openDropdown === 'trips' ? '▼' : '▶'}</span></>}
+          </div>
+          {!collapsed && openDropdown === 'trips' && (
+            <div className="dropdown-menu">
+              <Link 
+                to="/admin/trip-approvals" 
+                className={`dropdown-item ${location.pathname === '/admin/trip-approvals' ? 'active' : ''}`}
+                onClick={handleMenuItemClick}
+              >
+                Approve Trips
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div className="nav-dropdown">
+          <div 
             className={`nav-item dropdown-toggle ${openDropdown === 'vehicles' ? 'open' : ''}`}
             onClick={() => !collapsed && toggleDropdown('vehicles')}
             title="Vehicles"

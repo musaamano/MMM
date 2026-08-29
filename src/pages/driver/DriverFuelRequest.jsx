@@ -68,7 +68,7 @@ export default function DriverFuelRequest() {
     }
   };
 
-  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
+  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', cancelled: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
 
   const handleConfirm = async (id) => {
     if (!window.confirm('Confirm that you have received the fuel?')) return;
@@ -177,14 +177,14 @@ export default function DriverFuelRequest() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f8fafc' }}>
-                {['Vehicle', 'Fuel Type', 'Requested', 'Permitted', 'Destination', 'Status', 'Date', 'Action'].map(h => (
+                {['Vehicle', 'Fuel Type', 'Requested', 'Permitted', 'Approval Key', 'Destination', 'Status', 'Date', 'Action'].map(h => (
                   <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#374151', borderBottom: '1px solid #e2e8f0' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {myRequests.length === 0 ? (
-                <tr><td colSpan={8} style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No fuel requests yet</td></tr>
+                <tr><td colSpan={9} style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>No fuel requests yet</td></tr>
               ) : myRequests.map(r => (
                 <tr key={r._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.vehicleType || r.vehiclePlate || '—'}</td>
@@ -192,6 +192,22 @@ export default function DriverFuelRequest() {
                   <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.requestedLiters}L</td>
                   <td style={{ padding: '12px 16px', fontSize: 14, fontWeight: 600, color: '#22c55e' }}>
                     {r.permittedLiters ? `${r.permittedLiters}L` : '—'}
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    {r.approvalKey ? (
+                      <span style={{
+                        background: '#fef3c7', color: '#92400e',
+                        fontWeight: 800, fontSize: 14,
+                        padding: '4px 12px', borderRadius: 6,
+                        border: '1.5px solid #fcd34d',
+                        letterSpacing: 2, fontFamily: 'monospace',
+                        display: 'inline-block',
+                      }}>
+                        🔑 {r.approvalKey}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#9ca3af', fontSize: 13 }}>—</span>
+                    )}
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 14 }}>{r.destination}</td>
                   <td style={{ padding: '12px 16px' }}>

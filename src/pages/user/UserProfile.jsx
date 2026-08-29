@@ -2,7 +2,7 @@
 import { getCurrentUser } from '../../api/api';
 import './UserProfile.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 const UserProfile = () => {
@@ -103,6 +103,7 @@ const UserProfile = () => {
         setProfileData(p => ({ ...p, profilePhoto: base64 }));
         const stored = JSON.parse(localStorage.getItem('user') || '{}');
         localStorage.setItem('user', JSON.stringify({ ...stored, profilePhoto: base64 }));
+        window.dispatchEvent(new CustomEvent('userProfilePhotoUpdated', { detail: { profilePhoto: base64 } }));
         showToast('Profile photo updated!');
       } catch (err) {
         showToast(err.message || 'Failed to upload photo', 'error');

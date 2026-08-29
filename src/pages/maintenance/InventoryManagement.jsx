@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import './maintenance.css';
 
-const BASE  = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 const INIT  = { partName:'', category:'other', quantity:0, minLevel:5, unitCost:0, supplier:'', notes:'' };
 

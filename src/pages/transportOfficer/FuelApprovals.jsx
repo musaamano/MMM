@@ -50,7 +50,7 @@ export default function FuelApprovals() {
     finally { setActionLoading(false); }
   };
 
-  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
+  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', cancelled: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
   const filtered = filter === 'all' ? requests : requests.filter(r => r.status === filter);
 
   const getStock = (fuelType) => inventory.find(i => i.fuelType === fuelType);
@@ -64,8 +64,8 @@ export default function FuelApprovals() {
 
   return (
     <div style={{ padding: 24 }}>
-      <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700 }}>⛽ Fuel Approvals</h2>
-      <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: 14 }}>Review and approve driver fuel requests</p>
+      <h2 style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 700 }}>⛽ Fuel Requests</h2>
+      <p style={{ margin: '0 0 16px', color: '#6b7280', fontSize: 14 }}>Admin-controlled fuel authorization panel</p>
 
       {/* Fuel Station Inventory Banner */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
@@ -89,7 +89,7 @@ export default function FuelApprovals() {
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {['pending', 'approved', 'dispensed', 'confirmed', 'rejected', 'all'].map(s => (
+        {['pending', 'approved', 'dispensed', 'confirmed', 'cancelled', 'all'].map(s => (
           <button key={s} onClick={() => setFilter(s)}
             style={{ padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13,
               background: filter === s ? '#2563eb' : '#f1f5f9', color: filter === s ? '#fff' : '#374151' }}>

@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { getCurrentUser } from '../../api/api';
 import './DriverComplaints.css';
 
-const BASE = 'http://localhost:5000/api';
+const BASE = `http://${window.location.hostname}:5000/api`;
 const token = () => localStorage.getItem('token');
 
 const INIT = { category: 'Safety', description: '', priority: 'Medium', vehicle: '', tripId: '' };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, User, MessageSquare, ArrowLeft, CheckCircle } from 'lucide-react';
 import busLogo from '../../assets/bus.png';
@@ -32,7 +32,7 @@ export default function ContactSupport() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/contact', {
+      const response = await fetch(`http://${window.location.hostname}:5000/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

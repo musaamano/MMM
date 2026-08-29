@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Car, ClipboardList, AlertTriangle, Bell, User, Settings, X, CheckCheck } from 'lucide-react';
 import { getCurrentUser, getRequests, getComplaints } from '../../api/api';
@@ -41,13 +41,23 @@ const UserLayout = ({ onLogout }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    fetch('http://localhost:5000/api/users/me', {
+    fetch(`http://${window.location.hostname}:5000/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())
       .then(user => { if (user.profilePhoto) setProfilePhoto(user.profilePhoto); })
       .catch(console.error);
   }, [location.pathname]); // re-fetch whenever user navigates (picks up photo changes)
+
+  // Live-update avatar when user uploads a new profile photo
+  useEffect(() => {
+    const handlePhotoUpdated = (e) => {
+      const nextPhoto = e?.detail?.profilePhoto;
+      if (nextPhoto) setProfilePhoto(nextPhoto);
+    };
+    window.addEventListener('userProfilePhotoUpdated', handlePhotoUpdated);
+    return () => window.removeEventListener('userProfilePhotoUpdated', handlePhotoUpdated);
+  }, []);
 
   // Fetch notifications and poll every 30s
   const fetchNotifs = () => {

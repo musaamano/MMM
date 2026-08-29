@@ -11,6 +11,7 @@ const FuelRequests = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showDispenseModal, setShowDispenseModal] = useState(false);
   const [dispensedAmount, setDispensedAmount] = useState('');
+  const [approvalKey, setApprovalKey] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
   const fetchRequests = async () => {
@@ -35,11 +36,17 @@ const FuelRequests = () => {
     }
     setActionLoading(true);
     try {
-      const updated = await dispenseFuel(selectedRequest._id, liters, currentUser?.name || currentUser?.username);
+      const updated = await dispenseFuel(
+        selectedRequest._id,
+        liters,
+        currentUser?.name || currentUser?.username,
+        approvalKey
+      );
       setFuelRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
       setShowDispenseModal(false);
       setSelectedRequest(null);
       setDispensedAmount('');
+      setApprovalKey('');
     } catch (err) {
       alert(err.message);
     } finally {
@@ -47,7 +54,7 @@ const FuelRequests = () => {
     }
   };
 
-  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
+  const statusColor = { pending: '#f59e0b', approved: '#22c55e', rejected: '#ef4444', cancelled: '#ef4444', dispensed: '#3b82f6', confirmed: '#8b5cf6' };
   const filtered = filterStatus === 'all' ? fuelRequests : fuelRequests.filter(r => r.status === filterStatus);
   const stats = {
     total: fuelRequests.length,
@@ -60,12 +67,12 @@ const FuelRequests = () => {
     <div className="fuel-requests-page">
       <div className="fuel-page-header">
         <h2>Fuel Requests</h2>
-        <p>Dispense fuel for transport-officer-approved requests</p>
+      <p>Dispense fuel for admin-approved requests after key verification</p>
       </div>
 
       <div className="fuel-stats-grid">
         <div className="fuel-stat-card blue"><div className="fuel-stat-icon">📋</div><div className="fuel-stat-value">{stats.total}</div><div className="fuel-stat-label">Total</div></div>
-        <div className="fuel-stat-card orange"><div className="fuel-stat-icon">⏳</div><div className="fuel-stat-value">{stats.pending}</div><div className="fuel-stat-label">Pending (awaiting transport officer)</div></div>
+        <div className="fuel-stat-card orange"><div className="fuel-stat-icon">⏳</div><div className="fuel-stat-value">{stats.pending}</div><div className="fuel-stat-label">Pending (awaiting admin)</div></div>
         <div className="fuel-stat-card green"><div className="fuel-stat-icon">✓</div><div className="fuel-stat-value">{stats.approved}</div><div className="fuel-stat-label">Approved — Ready to Dispense</div></div>
         <div className="fuel-stat-card blue"><div className="fuel-stat-icon">⛽</div><div className="fuel-stat-value">{stats.dispensed}</div><div className="fuel-stat-label">Dispensed</div></div>
       </div>
@@ -73,7 +80,7 @@ const FuelRequests = () => {
       <div className="fuel-filter-section">
         <label className="fuel-filter-label">Filter:</label>
         <div className="fuel-filter-buttons">
-          {['approved', 'dispensed', 'confirmed', 'pending', 'rejected', 'all'].map(s => (
+          {['approved', 'dispensed', 'confirmed', 'pending', 'cancelled', 'all'].map(s => (
             <button key={s} className={`fuel-filter-btn ${filterStatus === s ? 'active' : ''}`} onClick={() => setFilterStatus(s)}>
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
@@ -113,7 +120,7 @@ const FuelRequests = () => {
                     <td>
                       {r.status === 'approved' && (
                         <button className="action-btn approve"
-                          onClick={() => { setSelectedRequest(r); setDispensedAmount(String(r.permittedLiters)); setShowDispenseModal(true); }}>
+                          onClick={() => { setSelectedRequest(r); setDispensedAmount(String(r.permittedLiters)); setApprovalKey(''); setShowDispenseModal(true); }}>
                           ⛽ Dispense
                         </button>
                       )}
@@ -140,6 +147,16 @@ const FuelRequests = () => {
               <p><strong>Fuel Type:</strong> {selectedRequest.fuelType}</p>
               <p><strong>Destination:</strong> {selectedRequest.destination}</p>
               <p><strong>Approved by:</strong> {selectedRequest.approvedBy}</p>
+              <div className="fuel-form-group">
+                <label className="fuel-form-label">Approval Key *</label>
+                <input
+                  type="text"
+                  value={approvalKey}
+                  onChange={e => setApprovalKey(e.target.value.toUpperCase())}
+                  className="fuel-form-input"
+                  placeholder="Enter approval key from driver/admin"
+                />
+              </div>
               <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 16px', margin: '12px 0' }}>
                 <strong style={{ color: '#16a34a' }}>Permitted amount: {selectedRequest.permittedLiters}L</strong>
                 <p style={{ margin: '4px 0 0', fontSize: 13, color: '#6b7280' }}>You may only dispense up to this amount</p>
@@ -151,7 +168,7 @@ const FuelRequests = () => {
               </div>
             </div>
             <div className="fuel-modal-actions">
-              <button onClick={handleDispense} disabled={actionLoading} className="fuel-btn-primary">
+              <button onClick={handleDispense} disabled={actionLoading || !approvalKey.trim()} className="fuel-btn-primary">
                 {actionLoading ? 'Dispensing...' : '⛽ Confirm Dispense'}
               </button>
               <button onClick={() => setShowDispenseModal(false)} className="fuel-btn-secondary">Cancel</button>

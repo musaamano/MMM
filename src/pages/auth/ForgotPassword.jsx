@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import busLogo from "../../assets/bus.png";
+import { isValidEmail } from "../../utils/validation";
 import "./forgotPassword.css";
 
 export default function ForgotPassword() {
@@ -9,11 +10,6 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,14 +20,14 @@ export default function ForgotPassword() {
       return;
     }
 
-    if (email.includes("@") && !validateEmail(email)) {
+    if (email.includes("@") && !isValidEmail(email)) {
       setError("Please enter a valid email address");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/auth/forgot-password", {
+      const response = await fetch(`http://${window.location.hostname}:5000/api/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

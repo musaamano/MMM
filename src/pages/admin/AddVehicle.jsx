@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createVehicle } from '../../api/api';
+import { isValidPlateNumber } from '../../utils/validation';
 import './addVehicle.css';
 
 const AddVehicle = () => {
@@ -22,6 +23,17 @@ const AddVehicle = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!isValidPlateNumber(formData.plateNumber)) {
+      setMessage({ type: 'error', text: 'Please enter a valid Plate Number format.' });
+      return;
+    }
+
+    if (formData.year < 1980 || formData.year > new Date().getFullYear() + 1) {
+      setMessage({ type: 'error', text: 'Please enter a valid vehicle year.' });
+      return;
+    }
+
     setLoading(true);
     try {
       await createVehicle({ ...formData, capacity: Number(formData.capacity) });

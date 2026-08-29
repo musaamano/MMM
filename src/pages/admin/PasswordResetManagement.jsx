@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { Key, Clock, CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
 import './adminTheme.css';
 import './passwordResetManagement.css';
@@ -15,7 +15,7 @@ export default function PasswordResetManagement() {
   const fetchResetLogs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/reset-logs', {
+      const response = await fetch(`http://${window.location.hostname}:5000/api/auth/reset-logs`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();

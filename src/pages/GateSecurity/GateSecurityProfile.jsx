@@ -50,6 +50,9 @@ const GateSecurityProfile = () => {
             window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
                 detail: { profilePhoto: defaultPhoto }
             }));
+            window.dispatchEvent(new CustomEvent('gateProfilePhotoUpdated', {
+                detail: { profilePhoto: defaultPhoto }
+            }));
         }
     }, []);
 
@@ -67,6 +70,9 @@ const GateSecurityProfile = () => {
 
             // Dispatch custom event to notify other components
             window.dispatchEvent(new CustomEvent('profilePhotoUpdated', {
+                detail: { profilePhoto: editData.profilePhoto }
+            }));
+            window.dispatchEvent(new CustomEvent('gateProfilePhotoUpdated', {
                 detail: { profilePhoto: editData.profilePhoto }
             }));
         }

@@ -1,12 +1,14 @@
-import { Search, Bell, ChevronDown, Menu, Settings, User, LogOut, Lock, Eye, EyeOff, X, Check } from 'lucide-react';
+import { Search, ChevronDown, Menu, Settings, User, LogOut, Lock, Eye, EyeOff, X, Check, Bell } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import TransportNotificationPanel from './TransportNotificationPanel';
+import { useNotifications } from '../../hooks/useNotifications';
+import NotificationDropdown from '../../components/NotificationDropdown';
+import NotificationAlerts from '../../components/NotificationAlerts';
 import { getCurrentUser, updateUser } from '../../api/api';
 import './TransportHeader.css';
 
 const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
-  const [showNotifications, setShowNotifications]     = useState(false);
-  const [notifCount, setNotifCount]                   = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [profileImage, setProfileImage]               = useState(null);
   const [modal, setModal]                             = useState(null); // 'profile' | 'edit' | 'password' | 'notifications' | 'theme'
@@ -133,28 +135,27 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
           <Check size={14} /> {toast}
         </div>
       )}
+      <NotificationAlerts notifications={notifications} />
 
       <div className="top-admin-bar">
+        {/* Bell */}
+        <NotificationDropdown
+          notifications={notifications}
+          unreadCount={unreadCount}
+          onMarkRead={markRead}
+          onMarkAllRead={markAllRead}
+          open={showNotifications}
+          onToggle={setShowNotifications}
+        />
+
+        {/* Gear — opens settings modal */}
         <div className="admin-dropdown-container" ref={dropdownRef}>
-          <div
-            className={`admin-profile-button ${showProfileDropdown ? 'active' : ''}`}
-            onClick={() => setShowProfileDropdown(o => !o)}
-          >
-            <div className="admin-avatar">
-              {profileImage
-                ? <img src={profileImage} alt="Profile" className="profile-image" />
-                : <span className="admin-avatar-text">{initials}</span>}
-            </div>
-            <div className="admin-text-info">
-              <span className="admin-main-text">{userInfo.name}</span>
-              <span className="admin-sub-text">{userInfo.role}</span>
-            </div>
-            <ChevronDown size={14} className="admin-chevron" />
-          </div>
+          <button className="th-icon-btn" onClick={() => setShowProfileDropdown(o => !o)}>
+            <Settings size={20} />
+          </button>
 
           {showProfileDropdown && (
             <div className="admin-dropdown">
-              {/* Header */}
               <div className="admin-dropdown-header">
                 <div className="admin-dropdown-avatar">
                   {profileImage
@@ -167,9 +168,7 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
                   <span className="admin-email">{userInfo.email}</span>
                 </div>
               </div>
-
               <div className="admin-dropdown-divider" />
-
               <div className="admin-dropdown-menu">
                 <button className="admin-dropdown-item" onClick={() => openModal('profile')}>
                   <User size={16} /><span>View Profile</span>
@@ -190,9 +189,7 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
                   <span className="th-icon-emoji">🎨</span><span>Theme Preferences</span>
                 </button>
               </div>
-
               <div className="admin-dropdown-divider" />
-
               <button className="admin-dropdown-item logout-item" onClick={onLogout}>
                 <LogOut size={16} /><span>Sign Out</span>
               </button>
@@ -200,7 +197,21 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
           )}
         </div>
 
-        <button className="top-logout-btn" onClick={onLogout}>Logout</button>
+        {/* Avatar + Name/Role pill */}
+        <div className="th-profile-pill">
+          <div className="th-pill-avatar">
+            {profileImage
+              ? <img src={profileImage} alt="Profile" className="profile-image" />
+              : <span>{initials}</span>}
+          </div>
+          <div className="th-pill-info">
+            <span className="th-pill-name">{userInfo.name}</span>
+            <span className="th-pill-role">{userInfo.role}</span>
+          </div>
+        </div>
+
+        {/* Logout */}
+        <button className="th-logout-btn" onClick={onLogout}>Logout</button>
       </div>
 
       {/* Main header bar */}
@@ -221,22 +232,10 @@ const TransportHeader = ({ onLogout, toggleSidebar, isSidebarOpen }) => {
           </div>
         </div>
         <div className="header-right">
-          <div className="header-actions">
-            <button className="icon-btn notification-btn" onClick={() => setShowNotifications(v => !v)}>
-              <Bell size={20} />
-              {notifCount > 0 && <span className="notification-badge">{notifCount}</span>}
-            </button>
-          </div>
         </div>
       </div>
 
       <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" style={{ display: 'none' }} />
-
-      <TransportNotificationPanel
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-        onBadgeCount={setNotifCount}
-      />
 
       {/* ── VIEW PROFILE MODAL ── */}
       {modal === 'profile' && (

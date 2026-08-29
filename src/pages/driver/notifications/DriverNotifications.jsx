@@ -1,105 +1,159 @@
-import { useState, useEffect } from 'react';
-import driverService from '../../../services/driverService';
+import { useState } from 'react';
+import { useNotifications } from '../../../hooks/useNotifications';
 import './DriverNotifications.css';
 
+const typeIcon = {
+  trip:        '🚗',
+  fuel:        '⛽',
+  maintenance: '🔧',
+  general:     '📢',
+};
+
+const typeLabel = {
+  trip:        'Trip',
+  fuel:        'Fuel',
+  maintenance: 'Maintenance',
+  general:     'General',
+};
+
 const DriverNotifications = () => {
-    const [notifications, setNotifications] = useState([]);
-    const [filter, setFilter] = useState('all');
-    const [loading, setLoading] = useState(true);
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
+  const [filter, setFilter] = useState('all');
 
-    useEffect(() => {
-        loadNotifications();
-        const interval = setInterval(loadNotifications, 30000); // Refresh every 30 seconds
-        return () => clearInterval(interval);
-    }, []);
+  const filtered = filter === 'all'
+    ? notifications
+    : filter === 'unread'
+      ? notifications.filter(n => !n.read)
+      : notifications.filter(n => n.type === filter);
 
-    const loadNotifications = async () => {
-        try {
-            const data = await driverService.getNotifications();
-            setNotifications(data);
-            setLoading(false);
-        } catch (error) {
-            console.error('Failed to load notifications:', error);
-            setLoading(false);
-        }
-    };
+  return (
+    <div className="driver-notifications">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2>
+          Notifications
+          {unreadCount > 0 && (
+            <span style={{
+              marginLeft: 10, background: '#dc2626', color: '#fff',
+              fontSize: 12, fontWeight: 700, padding: '3px 10px',
+              borderRadius: 20, verticalAlign: 'middle',
+            }}>
+              {unreadCount} new
+            </span>
+          )}
+        </h2>
+        {unreadCount > 0 && (
+          <button
+            onClick={markAllRead}
+            style={{
+              padding: '8px 18px', background: '#7c3aed', color: '#fff',
+              border: 'none', borderRadius: 8, fontWeight: 600,
+              fontSize: 13, cursor: 'pointer',
+            }}
+          >
+            ✓ Mark All Read
+          </button>
+        )}
+      </div>
 
-    const markAsRead = async (id) => {
-        try {
-            await driverService.markNotificationRead(id);
-            setNotifications(notifications.map(n =>
-                n.id === id ? { ...n, read: true } : n
-            ));
-        } catch (error) {
-            console.error('Failed to mark notification as read:', error);
-        }
-    };
+      {/* Filter tabs */}
+      <div className="filter-buttons">
+        {['all', 'unread', 'trip', 'fuel', 'maintenance'].map(f => (
+          <button
+            key={f}
+            className={filter === f ? 'active' : ''}
+            onClick={() => setFilter(f)}
+          >
+            {f === 'all' ? 'All' : f === 'unread' ? `Unread (${unreadCount})` : typeLabel[f]}
+          </button>
+        ))}
+      </div>
 
-    const getNotificationIcon = (type) => {
-        switch (type) {
-            case 'trip_assignment': return '🚗';
-            case 'schedule_reminder': return '⏰';
-            case 'vehicle_alert': return '⚠️';
-            case 'fuel_alert': return '⛽';
-            case 'maintenance': return '🔧';
-            default: return '📢';
-        }
-    };
-
-    const filteredNotifications = filter === 'all'
-        ? notifications
-        : filter === 'unread'
-            ? notifications.filter(n => !n.read)
-            : notifications.filter(n => n.type === filter);
-
-    if (loading) return <div className="loading">Loading notifications...</div>;
-
-    return (
-        <div className="driver-notifications">
-            <h2>Notifications</h2>
-
-            <div className="filter-buttons">
-                <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>
-                    All
-                </button>
-                <button className={filter === 'unread' ? 'active' : ''} onClick={() => setFilter('unread')}>
-                    Unread
-                </button>
-                <button className={filter === 'trip_assignment' ? 'active' : ''} onClick={() => setFilter('trip_assignment')}>
-                    Trips
-                </button>
-                <button className={filter === 'vehicle_alert' ? 'active' : ''} onClick={() => setFilter('vehicle_alert')}>
-                    Alerts
-                </button>
+      {/* List */}
+      <div className="notifications-list">
+        {filtered.length === 0 ? (
+          <p className="no-notifications">No notifications</p>
+        ) : (
+          filtered.map(n => (
+            <div
+              key={n._id}
+              className={`notification-card ${n.read ? 'read' : 'unread'}`}
+              onClick={() => !n.read && markRead(n._id)}
+            >
+              <div className="notification-icon">
+                {typeIcon[n.type] || '📢'}
+              </div>
+              <div className="notification-content">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <h4>{n.title}</h4>
+                  <span style={{
+                    fontSize: 11, fontWeight: 600, padding: '2px 8px',
+                    borderRadius: 12, background: n.type === 'fuel' ? '#fef3c7' : n.type === 'trip' ? '#dbeafe' : '#dcfce7',
+                    color: n.type === 'fuel' ? '#92400e' : n.type === 'trip' ? '#1e40af' : '#166534',
+                    flexShrink: 0,
+                  }}>
+                    {typeLabel[n.type] || 'General'}
+                  </span>
+                </div>
+                <p>
+                  {n.type === 'fuel' && n.message.includes('approval key')
+                    ? (() => {
+                        const keyMatch = n.message.match(/approval key is ([A-Z0-9]+)/i);
+                        if (!keyMatch) return n.message;
+                        const [full, key] = keyMatch;
+                        const parts = n.message.split(full);
+                        return (
+                          <>
+                            {parts[0]}approval key is{' '}
+                            <span style={{
+                              background: '#fef3c7', color: '#92400e',
+                              fontWeight: 800, fontSize: 15,
+                              padding: '2px 10px', borderRadius: 6,
+                              border: '1.5px solid #fcd34d',
+                              letterSpacing: 2, display: 'inline-block',
+                              marginTop: 4,
+                            }}>{key}</span>
+                            {parts[1]}
+                          </>
+                        );
+                      })()
+                    : n.message
+                  }
+                </p>
+                <span className="notification-time">
+                  {new Date(n.createdAt).toLocaleString()}
+                </span>
+              </div>
+              {!n.read && <div className="unread-indicator" />}
             </div>
+          ))
+        )}
+      </div>
 
-            <div className="notifications-list">
-                {filteredNotifications.length === 0 ? (
-                    <p className="no-notifications">No notifications</p>
-                ) : (
-                    filteredNotifications.map(notification => (
-                        <div
-                            key={notification.id}
-                            className={`notification-card ${notification.read ? 'read' : 'unread'} ${notification.severity || ''}`}
-                            onClick={() => !notification.read && markAsRead(notification.id)}
-                        >
-                            <div className="notification-icon">
-                                {getNotificationIcon(notification.type)}
-                            </div>
-                            <div className="notification-content">
-                                <h4>{notification.title}</h4>
-                                <p>{notification.message}</p>
-                                <span className="notification-time">
-                                    {new Date(notification.createdAt).toLocaleString()}
-                                </span>
-                            </div>
-                            {!notification.read && <div className="unread-indicator"></div>}
-                        </div>
-                    ))
-                )}
+      {/* Summary */}
+      {notifications.length > 0 && (
+        <div style={{
+          marginTop: 24, padding: '16px 20px',
+          background: '#fff', borderRadius: 12,
+          border: '1px solid #e5e7eb',
+          display: 'flex', gap: 32,
+        }}>
+          {[
+            { label: 'Total',       value: notifications.length,                          color: '#374151' },
+            { label: 'Unread',      value: unreadCount,                                   color: '#dc2626' },
+            { label: 'Read',        value: notifications.length - unreadCount,            color: '#16a34a' },
+            { label: 'Fuel',        value: notifications.filter(n=>n.type==='fuel').length,        color: '#f59e0b' },
+            { label: 'Trips',       value: notifications.filter(n=>n.type==='trip').length,        color: '#3b82f6' },
+            { label: 'Maintenance', value: notifications.filter(n=>n.type==='maintenance').length, color: '#7c3aed' },
+          ].map(s => (
+            <div key={s.label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: '#6b7280', marginTop: 2 }}>{s.label}</div>
             </div>
+          ))}
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default DriverNotifications;

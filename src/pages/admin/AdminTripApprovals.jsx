@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Search, MapPin, Users, AlertCircle, CheckCircle, XCircle, Building2, GraduationCap, Stethoscope, Truck, FlaskConical, Car, User, Calendar, RefreshCw } from "lucide-react";
-import { getRequests, getVehicles, assignRequest, rejectRequest, getCurrentUser } from "../../api/api";
-import "./requests.css";
+import { getRequests, getVehicles, approveRequest, rejectRequest, getCurrentUser } from "../../api/api";
+import "./adminTripApprovals.css";
 
-export default function Requests() {
+export default function AdminTripApprovals() {
   const [requests, setRequests] = useState([]);
   const [vehicles, setVehicles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,19 +86,15 @@ export default function Requests() {
     }
   };
 
-  const confirmAssignment = async (vehicleId) => {
+  const confirmApproval = async () => {
     try {
       setActionLoading(true);
-      const updated = await assignRequest(requestToApprove._id, {
-        vehicleId
+      const updated = await approveRequest(requestToApprove._id, {
+        approvedBy: currentUser?.name || currentUser?.username || "Admin",
       });
       setRequests(prev => prev.map(r => r._id === updated._id ? updated : r));
       setShowAssignmentModal(false);
       setRequestToApprove(null);
-      setRecommendedVehicles([]);
-      // Refresh available vehicles
-      const vehs = await getVehicles({ status: "available" });
-      setVehicles(vehs);
     } catch (err) {
       alert("Error: " + err.message);
     } finally {
@@ -138,8 +134,8 @@ export default function Requests() {
     <div className="request-management-layout">
       <div className="dashboard-header">
         <div>
-          <h1>Request Management</h1>
-          <p>Review trips, allocate resources, and coordinate drivers</p>
+          <h1>Trip Approvals</h1>
+          <p>Review and finalize assigned trips</p>
         </div>
         <div className="header-actions">
           <button className="refresh-btn" onClick={fetchData} title="Refresh">
@@ -261,14 +257,14 @@ export default function Requests() {
                 </div>
               )}
 
-              {selectedRequest.status === "pending" && (
+              {selectedRequest.status === "assigned" && (
                 <div className="actions-section">
                   <button
                     className="action-btn approve-btn"
                     disabled={actionLoading}
                     onClick={() => { setShowDetailsModal(false); handleApproveClick(selectedRequest); }}
                   >
-                    <CheckCircle size={16} /> Assign Vehicle
+                    <CheckCircle size={16} /> Finalize Approval
                   </button>
                   <div className="reject-section">
                     <textarea
@@ -299,12 +295,12 @@ export default function Requests() {
         </div>
       )}
 
-      {/* Vehicle Assignment Modal */}
+      {/* Approval Confirmation Modal */}
       {showAssignmentModal && (
         <div className="modal-overlay" onClick={() => setShowAssignmentModal(false)}>
           <div className="assignment-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Select Vehicle for Assignment</h2>
+              <h2>Confirm Trip Approval</h2>
               <button className="close-btn" onClick={() => setShowAssignmentModal(false)}>×</button>
             </div>
             <div className="modal-body">
@@ -312,77 +308,24 @@ export default function Requests() {
                 <h3>Request: #{requestToApprove?._id.slice(-6).toUpperCase()}</h3>
                 <div className="summary-details">
                   <span><strong>Requester:</strong> {requestToApprove?.requester}</span>
-                  <span><strong>Passengers:</strong> {requestToApprove?.passengers}</span>
                   <span><strong>Destination:</strong> {requestToApprove?.destination}</span>
-                  <span><strong>Priority:</strong> {requestToApprove?.priority}</span>
+                  <span><strong>Assigned Vehicle:</strong> {requestToApprove?.assignedVehicle}</span>
+                  <span><strong>Assigned Driver:</strong> {requestToApprove?.assignedDriver || "None"}</span>
                 </div>
               </div>
 
-              <div className="recommendations-section">
-                <h3>Available Vehicles ({recommendedVehicles.length})</h3>
-                {recommendedVehicles.length === 0 && actionLoading === false && (
-                  <p style={{color:"#94a3b8",padding:"1rem"}}>Loading vehicles...</p>
-                )}
-                <div className="vehicle-recommendations">
-                  {recommendedVehicles.map((vehicle, index) => (
-                    <div key={vehicle._id} className={`recommendation-card ${index === 0 ? "best-match" : ""}`}>
-                      <div className="recommendation-header">
-                        <div className="vehicle-info">
-                          <h4>{vehicle.model}</h4>
-                          <span className="vehicle-type">{vehicle.type} • {vehicle.capacity} seats • {vehicle.plateNumber}</span>
-                        </div>
-                        <div className="match-score">
-                          <span className="percentage">{vehicle.matchPercentage}%</span>
-                          <span className="match-label">Match</span>
-                        </div>
-                      </div>
-                      {vehicle.assignedDriverName && (
-                        <div className="driver-info">
-                          <span><strong>Driver:</strong> {vehicle.assignedDriverName}</span>
-                        </div>
-                      )}
-                      <div className="match-reasons">
-                        <strong>Why this vehicle:</strong>
-                        <ul>{vehicle.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
-                      </div>
-                      <button
-                        className={`assign-btn ${index === 0 ? "primary" : "secondary"}`}
-                        onClick={() => confirmAssignment(vehicle._id)}
-                        disabled={actionLoading}
-                      >
-                        {index === 0 ? "⭐ Assign Best Match" : "Assign Vehicle"}
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Show all available vehicles if no smart recommendations */}
-                  {recommendedVehicles.length === 0 && vehicles.map((vehicle) => (
-                    <div key={vehicle._id} className="recommendation-card">
-                      <div className="recommendation-header">
-                        <div className="vehicle-info">
-                          <h4>{vehicle.model}</h4>
-                          <span className="vehicle-type">{vehicle.type} • {vehicle.capacity} seats • {vehicle.plateNumber}</span>
-                        </div>
-                      </div>
-                      {vehicle.assignedDriverName && (
-                        <div className="driver-info"><span><strong>Driver:</strong> {vehicle.assignedDriverName}</span></div>
-                      )}
-                      <button
-                        className="assign-btn secondary"
-                        onClick={() => confirmAssignment(vehicle._id)}
-                        disabled={actionLoading}
-                      >
-                        Assign Vehicle
-                      </button>
-                    </div>
-                  ))}
-
-                  {vehicles.length === 0 && (
-                    <div className="no-vehicles">
-                      <p>⚠️ No available vehicles at the moment.</p>
-                    </div>
-                  )}
-                </div>
+              <div style={{ marginTop: "20px" }}>
+                <p style={{ marginBottom: "20px", color: "#334155" }}>
+                  By approving this trip, a QR code will be generated for the driver and gateway security. The vehicle will be dispatched.
+                </p>
+                <button
+                  className="assign-btn primary"
+                  onClick={confirmApproval}
+                  disabled={actionLoading}
+                  style={{ width: "100%" }}
+                >
+                  {actionLoading ? "Approving..." : "✅ Approve & Generate QR"}
+                </button>
               </div>
             </div>
           </div>

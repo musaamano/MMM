@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './adminTheme.css';
 import './addUser.css';
+import { isValidEmail, isValidPhone, isStrongPassword } from '../../utils/validation';
 
 const ROLES = [
   { label: 'User',                  value: 'USER' },
@@ -37,15 +38,16 @@ export default function AddUser() {
     // Client-side validation
     if (!form.name.trim())        { setError('Full name is required.');         return; }
     if (!form.username.trim())    { setError('Username is required.');           return; }
-    if (!form.email.trim())       { setError('Email is required.');              return; }
+    if (!isValidEmail(form.email)) { setError('Please enter a valid email address.'); return; }
     if (!form.role)               { setError('Please select a role.');           return; }
-    if (form.password.length < 6) { setError('Password must be at least 6 characters.'); return; }
+    if (!isStrongPassword(form.password)) { setError('Password must be at least 6 characters.'); return; }
     if (form.password !== form.confirmPassword) { setError('Passwords do not match.'); return; }
+    if (form.phone && !isValidPhone(form.phone)) { setError('Please enter a valid phone number.'); return; }
 
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/auth/register', {
+      const res = await fetch(`http://${window.location.hostname}:5000/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
