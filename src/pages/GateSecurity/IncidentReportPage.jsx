@@ -2,7 +2,7 @@
 import { Camera, CameraOff, RefreshCw } from 'lucide-react';
 import './IncidentReportPage.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
 const ALPR  = 'http://localhost:5001';
 const token = () => localStorage.getItem('token');
 

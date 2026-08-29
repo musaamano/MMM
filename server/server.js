@@ -54,7 +54,12 @@ app.use('/api/notifications', require('./routes/notifications'));
 // ─── Scheduled Jobs ───────────────────────────────────────
 require('./jobs/dailyMaintenanceReport')();
 
-// Health check — also reports MongoDB connection state
+// Root endpoint — confirms the backend is running
+app.get('/', (req, res) => {
+  res.json({ success: true, message: 'HU-VMS Backend is running' });
+});
+
+
 app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting

@@ -107,9 +107,9 @@ router.post('/forgot-password', async (req, res) => {
     });
     await resetLog.save();
 
-    // In production, send email here
-    // For now, just log the reset URL
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    // Build reset URL from environment variable so it works in production
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const resetUrl = `${frontendUrl}/reset-password/${resetToken}`;
     console.log('Password Reset URL:', resetUrl);
     console.log('User:', user.email);
 
