@@ -10,6 +10,11 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
 
+    // Validate required fields
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
     // Find user by username (role is now optional)
     const query = { username };
     if (role) query.role = role;
@@ -18,9 +23,9 @@ router.post('/login', async (req, res) => {
     if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ message: 'Wrong password' });
+    if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
 
-    if (!user.isActive) return res.status(403).json({ message: 'Account is disabled' });
+    if (!user.isActive) return res.status(403).json({ message: 'Account is disabled. Contact admin.' });
 
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },

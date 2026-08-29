@@ -5,7 +5,8 @@ require('dotenv').config();
 
 const app = express();
 
-// Allowed origins: localhost (dev), local network, and the deployed frontend URL
+// Allowed origins: localhost (dev), local network, onrender.com deployments,
+// and any explicitly configured FRONTEND_URL
 const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -15,11 +16,12 @@ const ALLOWED_ORIGINS = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g. mobile apps, curl)
+    // Allow requests with no origin (e.g. mobile apps, curl, Render health checks)
     if (!origin) return callback(null, true);
 
     if (
       ALLOWED_ORIGINS.includes(origin) ||
+      origin.endsWith('.onrender.com') ||          // allow all Render deployments
       origin.startsWith('http://192.168.') ||
       origin.startsWith('http://10.') ||
       origin.startsWith('http://172.')
