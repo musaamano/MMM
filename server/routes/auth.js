@@ -10,8 +10,17 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password, role } = req.body;
 
+    // Safe diagnostic logging — never logs actual password or secrets
+    console.log('[LOGIN] attempt:', {
+      username: username || '(missing)',
+      hasPassword: !!password,
+      role: role || '(none)',
+      contentType: req.headers['content-type'] || '(missing)',
+    });
+
     // Validate required fields
     if (!username || !password) {
+      console.log('[LOGIN] 400 — missing username or password');
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
@@ -20,12 +29,25 @@ router.post('/login', async (req, res) => {
     if (role) query.role = role;
     
     const user = await User.findOne(query);
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user) {
+      console.log('[LOGIN] 400 — user not found:', username);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    console.log('[LOGIN] user found:', username, '| role:', user.role, '| isActive:', user.isActive);
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!valid) {
+      console.log('[LOGIN] 400 — password mismatch for:', username);
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
-    if (!user.isActive) return res.status(403).json({ message: 'Account is disabled. Contact admin.' });
+    if (!user.isActive) {
+      console.log('[LOGIN] 403 — account disabled:', username);
+      return res.status(403).json({ message: 'Account is disabled. Contact admin.' });
+    }
+
+    console.log('[LOGIN] success:', username);
 
     const token = jwt.sign(
       { id: user._id, role: user.role, name: user.name },
