@@ -6,6 +6,8 @@ import * as XLSX from 'xlsx';
 import { sendReport, getCurrentUser } from '../api/api';
 import './ExportButton.css';
 
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const ExportButton = ({ data, filename, reportTitle }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -132,7 +134,7 @@ const ExportButton = ({ data, filename, reportTitle }) => {
     try {
       // Fetch transport officers from backend
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://${window.location.hostname}:5000/api/users`, {
+      const res = await fetch(`${BASE}/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const users = await res.json();

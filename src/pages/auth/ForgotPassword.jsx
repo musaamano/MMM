@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import busLogo from "../../assets/bus.png";
@@ -27,7 +27,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://${window.location.hostname}:5000/api/auth/forgot-password`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

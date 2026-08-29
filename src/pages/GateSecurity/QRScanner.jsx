@@ -3,7 +3,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import { ShieldCheck, ShieldX, QrCode, AlertTriangle } from 'lucide-react';
 import './QRScanner.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
 const token = () => localStorage.getItem('token');
 
 export default function QRScanner() {

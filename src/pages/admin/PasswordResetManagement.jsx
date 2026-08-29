@@ -3,6 +3,8 @@ import { Key, Clock, CheckCircle, XCircle, AlertTriangle, User } from 'lucide-re
 import './adminTheme.css';
 import './passwordResetManagement.css';
 
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default function PasswordResetManagement() {
   const [resetLogs, setResetLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function PasswordResetManagement() {
   const fetchResetLogs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:5000/api/auth/reset-logs`, {
+      const response = await fetch(`${BASE}/auth/reset-logs`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();

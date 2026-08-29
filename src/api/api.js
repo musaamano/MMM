@@ -1,4 +1,7 @@
-﻿const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000/api`;
+﻿// VITE_API_URL must be set as an environment variable on your hosting platform.
+// For local dev: create a .env file with VITE_API_URL=http://localhost:5000/api
+// For production: set VITE_API_URL=https://hu-vms-backend.onrender.com/api in Render
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Get token from localStorage
 const getToken = () => localStorage.getItem('token');

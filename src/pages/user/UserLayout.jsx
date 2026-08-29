@@ -41,7 +41,7 @@ const UserLayout = ({ onLogout }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    fetch(`http://${window.location.hostname}:5000/api/users/me`, {
+    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())

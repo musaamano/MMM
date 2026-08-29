@@ -2,7 +2,7 @@
 import { getCurrentUser } from '../../api/api';
 import './DriverComplaints.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
 const token = () => localStorage.getItem('token');
 
 const INIT = { category: 'Safety', description: '', priority: 'Medium', vehicle: '', tripId: '' };

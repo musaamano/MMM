@@ -3,6 +3,8 @@ import { Mail, Clock, CheckCircle, AlertCircle, Send, Trash2, Filter } from 'luc
 import './adminTheme.css';
 import './contactMessages.css';
 
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 export default function ContactMessages() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export default function ContactMessages() {
       if (filter.priority !== 'all') params.append('priority', filter.priority);
       if (filter.category !== 'all') params.append('category', filter.category);
 
-      const response = await fetch(`http://${window.location.hostname}:5000/api/contact?${params}`, {
+      const response = await fetch(`${BASE}/contact?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await response.json();
@@ -41,7 +43,7 @@ export default function ContactMessages() {
     setSending(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://${window.location.hostname}:5000/api/contact/${messageId}/respond`, {
+      const response = await fetch(`${BASE}/contact/${messageId}/respond`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -67,7 +69,7 @@ export default function ContactMessages() {
   const handleStatusChange = async (messageId, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://${window.location.hostname}:5000/api/contact/${messageId}/status`, {
+      await fetch(`${BASE}/contact/${messageId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -86,7 +88,7 @@ export default function ContactMessages() {
 
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://${window.location.hostname}:5000/api/contact/${messageId}`, {
+      await fetch(`${BASE}/contact/${messageId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './adminTheme.css';
 import './addUser.css';
@@ -47,7 +47,7 @@ export default function AddUser() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://${window.location.hostname}:5000/api/auth/register`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

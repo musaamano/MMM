@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck, Car, AlertTriangle, FileWarning, Clock, List } from 'lucide-react';
 import './GateSecurityDashboard.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
 const token = () => localStorage.getItem('token');
 
 export default function GateSecurityDashboard() {

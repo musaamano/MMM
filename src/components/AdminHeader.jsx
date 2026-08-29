@@ -7,6 +7,8 @@ import NotificationDropdown from './NotificationDropdown';
 import NotificationAlerts from './NotificationAlerts';
 import './AdminHeader.css';
 
+const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 const AdminHeader = () => {
   const { setUser } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ const AdminHeader = () => {
     // Also fetch fresh from DB
     const token = localStorage.getItem('token');
     if (token) {
-      fetch(`http://${window.location.hostname}:5000/api/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      fetch(`${BASE}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
         .then(u => {
           if (u.profilePhoto) setProfilePhoto(u.profilePhoto);

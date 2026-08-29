@@ -7,7 +7,7 @@ import {
 import { Wrench, ClipboardList, AlertTriangle, Package, CheckCircle, Clock } from 'lucide-react';
 import './maintenance.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
 const token = () => localStorage.getItem('token');
 
 const COLORS = {

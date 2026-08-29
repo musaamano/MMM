@@ -5,7 +5,7 @@ import { Car, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
 import './NewDriverDashboard.css';
 
-const BASE = `http://${window.location.hostname}:5000/api`;
+const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
 const token = () => localStorage.getItem('token');
 
 export default function NewDriverDashboard() {
