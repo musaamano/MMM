@@ -1,8 +1,9 @@
 ﻿import { useState, useEffect } from 'react';
 import { getCurrentUser } from '../../api/api';
 import './DriverComplaints.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 const INIT = { category: 'Safety', description: '', priority: 'Medium', vehicle: '', tripId: '' };

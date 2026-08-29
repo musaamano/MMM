@@ -5,8 +5,9 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { sendReport, getCurrentUser } from '../api/api';
 import './ExportButton.css';
+import API_BASE_URL from '../config.js';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE = API_BASE_URL;
 
 const ExportButton = ({ data, filename, reportTitle }) => {
   const [showExportMenu, setShowExportMenu] = useState(false);

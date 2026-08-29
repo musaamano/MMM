@@ -6,8 +6,9 @@ import {
 } from 'recharts';
 import { Wrench, ClipboardList, AlertTriangle, Package, CheckCircle, Clock } from 'lucide-react';
 import './maintenance.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 const COLORS = {

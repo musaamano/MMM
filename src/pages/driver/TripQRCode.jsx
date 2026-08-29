@@ -1,8 +1,9 @@
 ﻿import { useState, useEffect } from 'react';
 import { QrCode, Download, RefreshCw } from 'lucide-react';
 import './TripQRCode.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 export default function TripQRCode({ tripId, tripStatus, destination, date }) {

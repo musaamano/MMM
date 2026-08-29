@@ -4,6 +4,7 @@ import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import busLogo from "../../assets/bus.png";
 import { isValidEmail } from "../../utils/validation";
 import "./forgotPassword.css";
+import API_BASE_URL from '../../config.js';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -27,7 +28,7 @@ export default function ForgotPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/forgot-password`, {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),

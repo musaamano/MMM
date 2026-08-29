@@ -3,6 +3,7 @@ import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Car, ClipboardList, AlertTriangle, Bell, User, Settings, X, CheckCheck } from 'lucide-react';
 import { getCurrentUser, getRequests, getComplaints } from '../../api/api';
 import './user.css';
+import API_BASE_URL from '../../config.js';
 
 const buildNotifications = (requests, complaints, username) => {
   const notifs = [];
@@ -41,7 +42,7 @@ const UserLayout = ({ onLogout }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/users/me`, {
+    fetch(`${API_BASE_URL}/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(r => r.json())

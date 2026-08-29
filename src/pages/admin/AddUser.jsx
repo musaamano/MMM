@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './adminTheme.css';
 import './addUser.css';
 import { isValidEmail, isValidPhone, isStrongPassword } from '../../utils/validation';
+import API_BASE_URL from '../../config.js';
 
 const ROLES = [
   { label: 'User',                  value: 'USER' },
@@ -47,7 +48,7 @@ export default function AddUser() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/auth/register`, {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

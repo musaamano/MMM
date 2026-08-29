@@ -4,8 +4,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Car, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
 import './NewDriverDashboard.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 export default function NewDriverDashboard() {

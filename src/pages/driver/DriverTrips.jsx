@@ -1,8 +1,9 @@
 ﻿import { useState, useEffect } from 'react';
 import TripQRCode from './TripQRCode';
 import './DriverTrips.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 const STATUS_FLOW = { approved: 'started', started: 'in-progress', 'in-progress': 'completed' };

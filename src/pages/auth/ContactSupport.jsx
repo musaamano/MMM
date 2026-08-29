@@ -4,6 +4,7 @@ import { Mail, User, MessageSquare, ArrowLeft, CheckCircle } from 'lucide-react'
 import busLogo from '../../assets/bus.png';
 import './forgotPassword.css';
 import './contactSupport.css';
+import API_BASE_URL from '../../config.js';
 
 export default function ContactSupport() {
   const [formData, setFormData] = useState({
@@ -32,7 +33,7 @@ export default function ContactSupport() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/contact`, {
+      const response = await fetch(`${API_BASE_URL}/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)

@@ -2,8 +2,9 @@
 import { Key, Clock, CheckCircle, XCircle, AlertTriangle, User } from 'lucide-react';
 import './adminTheme.css';
 import './passwordResetManagement.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE = API_BASE_URL;
 
 export default function PasswordResetManagement() {
   const [resetLogs, setResetLogs] = useState([]);

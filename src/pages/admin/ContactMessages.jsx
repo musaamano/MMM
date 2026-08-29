@@ -2,8 +2,9 @@
 import { Mail, Clock, CheckCircle, AlertCircle, Send, Trash2, Filter } from 'lucide-react';
 import './adminTheme.css';
 import './contactMessages.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const BASE = API_BASE_URL;
 
 export default function ContactMessages() {
   const [messages, setMessages] = useState([]);

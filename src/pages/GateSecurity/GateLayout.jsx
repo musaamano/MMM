@@ -3,8 +3,9 @@ import { Link, useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ShieldCheck, List, AlertTriangle, FileWarning, Bell, Settings, User, X, QrCode } from 'lucide-react';
 import { getCurrentUser } from '../../api/api';
 import './GateLayout.css';
+import API_BASE_URL from '../../config.js';
 
-const BASE = (import.meta.env.VITE_API_URL || "http://localhost:5000/api");
+const BASE = API_BASE_URL;
 const token = () => localStorage.getItem('token');
 
 export default function GateLayout({ onLogout }) {

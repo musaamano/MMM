@@ -1,5 +1,6 @@
-﻿// API base URL configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+﻿// API base URL — uses central config
+import API_BASE_URL from '../config.js';
+const API_BASE_URL_VAL = API_BASE_URL;
 
 // Generic API request handler
 const apiRequest = async (endpoint, options = {}) => {
@@ -15,7 +16,7 @@ const apiRequest = async (endpoint, options = {}) => {
     };
 
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        const response = await fetch(`${API_BASE_URL_VAL}${endpoint}`, config);
 
         if (!response.ok) {
             throw new Error(`API Error: ${response.statusText}`);
