@@ -5,15 +5,31 @@ require('dotenv').config();
 
 const app = express();
 
+// Allowed origins: localhost (dev), local network, and the deployed frontend URL
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:4173',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+];
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow any localhost origin or no origin (e.g. curl/Postman)
-    if (!origin || origin.startsWith('http://localhost')) {
+    // Allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin) return callback(null, true);
+
+    if (
+      ALLOWED_ORIGINS.includes(origin) ||
+      origin.startsWith('http://192.168.') ||
+      origin.startsWith('http://10.') ||
+      origin.startsWith('http://172.')
+    ) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
     }
-  }
+  },
+  credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -33,19 +49,38 @@ app.use('/api/contact',   require('./routes/contact'));
 app.use('/api/driver',    require('./routes/driverPortal'));
 app.use('/api/security',  require('./routes/security'));
 app.use('/api/maintenance', require('./routes/maintenance'));
+app.use('/api/notifications', require('./routes/notifications'));
 
 // ─── Scheduled Jobs ───────────────────────────────────────
 require('./jobs/dailyMaintenanceReport')();
 
-// Health check
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// Health check — also reports MongoDB connection state
+app.get('/api/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  // 0=disconnected, 1=connected, 2=connecting, 3=disconnecting
+  const dbStatus = ['disconnected', 'connected', 'connecting', 'disconnecting'][dbState] || 'unknown';
+  res.json({ status: 'ok', db: dbStatus });
+});
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
+const PORT = process.env.PORT || 4000;
+
+// Start the HTTP server immediately so Render's health check passes
+// regardless of the MongoDB connection state.
+app.listen(PORT, '0.0.0.0', () =>
+  console.log(`Server running on port ${PORT}`)
+);
+
+// Connect to MongoDB separately — server stays up even if this fails.
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI);
     console.log('MongoDB connected');
-    app.listen(process.env.PORT || 5000, () =>
-      console.log(`Server running on port ${process.env.PORT || 5000}`)
-    );
-  })
-  .catch((err) => console.error('MongoDB connection error:', err));
+  } catch (err) {
+    console.error('MongoDB connection error:', err.message);
+    // Retry after 5 seconds instead of crashing
+    console.log('Retrying MongoDB connection in 5 seconds...');
+    setTimeout(connectDB, 5000);
+  }
+};
+
+connectDB();
